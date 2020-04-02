@@ -30,13 +30,17 @@ def download_tile(x, y, z, tile_server):
     return(path)
 
 
-def merge_tiles(input_pattern, output_path):
-    merge_command = ['gdal_merge.py', '-o', output_path]
+def merge_tiles(temp_dir, output_dir):
+    merge_command = ['gdalbuildvrt', temp_dir + '/merged.vrt']
+    input_pattern = temp_dir + '/*.tif'
 
     for name in glob.glob(input_pattern):
-        merge_command.append(name)
+        subprocess.call(["pct2rgb.py", name, name + '.rgb.tif'])
+        merge_command.append(name + '.rgb.tif')
 
     subprocess.call(merge_command)
+    subprocess.call(["echo", "gdal_translate", temp_dir + "/merged.vrt", output_dir + "/merged.tif"])
+    subprocess.call(["echo", "gdal_translate", temp_dir + "/merged.vrt", output_dir + "/merged.png"])
 
 
 def georeference_raster_tile(x, y, z, path):
@@ -62,7 +66,7 @@ for x in range(x_min, x_max + 1):
 print("Download complete")
 
 print("Merging tiles")
-merge_tiles(temp_dir + '/*.tif', output_dir + '/merged.tif')
+merge_tiles(temp_dir, output_dir)
 print("Merge complete")
 
 shutil.rmtree(temp_dir)
